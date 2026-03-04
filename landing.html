@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOIR — Private Client Access</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cream: #f5f0e8;
+    --ink: #0e0c0a;
+    --gold: #b8975a;
+    --gold-light: #d4b07a;
+    --muted: #7a7068;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.6;
+  }
+
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+  }
+
+  /* Left panel */
+  .left {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 60px 56px;
+    background: var(--ink);
+    border-right: 1px solid rgba(184,151,90,0.15);
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.1s forwards;
+  }
+
+  .left::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(184,151,90,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .wordmark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .hero-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0 40px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.6;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 5vw, 76px);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--cream);
+    margin-bottom: 32px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+
+  .descriptor {
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--muted);
+    max-width: 380px;
+    letter-spacing: 0.02em;
+  }
+
+  .footer-note {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(122,112,104,0.5);
+  }
+
+  /* Right panel */
+  .right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 56px;
+    background: #0b0908;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.35s forwards;
+  }
+
+  .form-card {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .form-label {
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 40px;
+    display: block;
+  }
+
+  .field {
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .field label {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(184,151,90,0.2);
+    color: var(--cream);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    padding: 10px 0;
+    outline: none;
+    transition: border-color 0.3s ease;
+    letter-spacing: 0.02em;
+  }
+
+  .field select option {
+    background: #0e0c0a;
+    color: var(--cream);
+    font-style: normal;
+  }
+
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    border-bottom-color: var(--gold);
+  }
+
+  .field input::placeholder,
+  .field textarea::placeholder {
+    color: rgba(122,112,104,0.4);
+    font-style: italic;
+  }
+
+  .field textarea {
+    resize: none;
+    height: 80px;
+  }
+
+  .field select {
+    color: rgba(122,112,104,0.4);
+    font-style: italic;
+  }
+
+  .field select.has-value {
+    color: var(--cream);
+    font-style: normal;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(184,151,90,0.3) 0%, transparent 100%);
+    margin: 36px 0;
+  }
+
+  .submit-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(184,151,90,0.5);
+    color: var(--gold);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    padding: 18px 24px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+    z-index: 0;
+  }
+
+  .submit-btn:hover::before { transform: translateX(0); }
+  .submit-btn:hover { color: var(--ink); }
+  .submit-btn span { position: relative; z-index: 1; }
+
+  .privacy-note {
+    margin-top: 20px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: rgba(122,112,104,0.4);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  /* Success state */
+  .success-msg {
+    display: none;
+    text-align: center;
+    padding: 40px 0;
+  }
+
+  .success-msg .icon {
+    font-size: 32px;
+    margin-bottom: 24px;
+    color: var(--gold);
+  }
+
+  .success-msg h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--cream);
+    margin-bottom: 12px;
+  }
+
+  .success-msg p {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 768px) {
+    .page { grid-template-columns: 1fr; }
+    .left {
+      padding: 48px 32px;
+      border-right: none;
+      border-bottom: 1px solid rgba(184,151,90,0.15);
+      min-height: 55vh;
+    }
+    .right { padding: 48px 32px; }
+    h1 { font-size: 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Left -->
+  <div class="left">
+    <div class="wordmark">BESPOKEN</div>
+
+    <div class="hero-text">
+      <div class="eyebrow">New Client Inquiries</div>
+      <h1>Custom comms<br>for select <em>clientele.</em></h1>
+      <p class="descriptor">
+        We work with a select number of clients each quarter. If you believe this might be a fit, we'd like to hear from you.
+      </p>
+    </div>
+
+    <div class="footer-note">Selective. Bespoke. Exceptional.</div>
+  </div>
+
+  <!-- Right -->
+  <div class="right">
+    <div class="form-card">
+      <span class="form-label">Begin Your Inquiry</span>
+
+      <form id="contactForm" action="https://formspree.io/f/xjgelgbj" method="POST">
+        <div class="field">
+          <label>Full Name</label>
+          <input type="text" name="name" placeholder="Your name" required />
+        </div>
+
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" name="email" placeholder="your@email.com" required />
+        </div>
+
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="tel" name="phone" placeholder="+1 (000) 000-0000" />
+        </div>
+
+        <div class="field">
+          <label>Monthly Project Budget</label>
+          <select name="budget">
+            <option value="" disabled selected style="color:rgba(122,112,104,0.4)">Select a range</option>
+            <option>$5,000 – $10,000</option>
+            <option>$10,000 – $25,000</option>
+            <option>$25,000 – $50,000</option>
+            <option>$50,000+</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Tell Us About Your Project</label>
+          <textarea name="message" placeholder="A brief description of what you have in mind…"></textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <button type="submit" class="submit-btn"><span>Submit Inquiry</span></button>
+
+        <p class="privacy-note">Your information is kept strictly confidential<br>and shared with no third parties.</p>
+      </form>
+
+      <div class="success-msg" id="successMsg">
+        <div class="icon">◈</div>
+        <h3>Thank You</h3>
+        <p>Your inquiry has been received.<br>We'll be in touch within 48 hours.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const select = document.querySelector('.field select');
+  select.addEventListener('change', function() {
+    this.classList.toggle('has-value', this.value !== '');
+  });
+
+  document.getElementById('contactForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = this;
+    const data = new FormData(form);
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (response.ok) {
+        form.style.opacity = '0';
+        form.style.transition = 'opacity 0.4s ease';
+        setTimeout(() => {
+          form.style.display = 'none';
+          const msg = document.getElementById('successMsg');
+          msg.style.display = 'block';
+          msg.style.opacity = '0';
+          msg.style.transition = 'opacity 0.6s ease';
+          setTimeout(() => msg.style.opacity = '1', 50);
+        }, 400);
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
+    } catch (err) {
+      alert('Something went wrong. Please try again.');
+    }
+  });
+</script>
+</body>
+</html>
